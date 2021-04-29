@@ -21,23 +21,22 @@ HRESULT __fastcall hkPresent(IDXGISwapChain* pChain, UINT syncInterval, UINT fla
         if (SUCCEEDED(pSwapChain->GetDevice(__uuidof(pDevice), reinterpret_cast<void**>(&pDevice)))) {
             pSwapChain->GetDevice(__uuidof(pDevice), reinterpret_cast<void**>(&pDevice));
             pDevice->GetImmediateContext(&pContext);
+
+            FW1CreateFactory(FW1_VERSION, &pFW1Factory);
+            pFW1Factory->CreateFontWrapper(pDevice, L"Bahnschrift", &pFontWrapper);
+            pFW1Factory->Release();
         }
-
-        ID3D11Texture2D* renderTargetTexture = nullptr;
-
-        if (SUCCEEDED(pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<LPVOID*>(&renderTargetTexture))))
-        {
-            pDevice->CreateRenderTargetView(renderTargetTexture, NULL, &renderTargetView);
-            renderTargetTexture->Release();
-        }
-
-        FW1CreateFactory(FW1_VERSION, &pFW1Factory);
 
         init = true;
-    }
+    };
 
-    pFW1Factory->CreateFontWrapper(pDevice, L"Bahnschrift", &pFontWrapper);
-    pFW1Factory->Release();
+    ID3D11Texture2D* renderTargetTexture = nullptr;
+
+    if (SUCCEEDED(pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<LPVOID*>(&renderTargetTexture))))
+    {
+        pDevice->CreateRenderTargetView(renderTargetTexture, NULL, &renderTargetView);
+        renderTargetTexture->Release();
+    }
 
     pContext->OMSetRenderTargets(1, &renderTargetView, nullptr);
 
@@ -48,6 +47,8 @@ HRESULT __fastcall hkPresent(IDXGISwapChain* pChain, UINT syncInterval, UINT fla
     unsigned int color = 0xff25db9c;
 
     pFontWrapper->DrawString(pContext, text, size, x, y, color, FW1_RESTORESTATE);
+
+    renderTargetView->Release();
 
     return gamesPresent(pChain, syncInterval, flags);
 }
